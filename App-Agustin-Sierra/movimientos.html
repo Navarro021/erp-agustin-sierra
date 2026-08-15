@@ -8,21 +8,15 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #F8F9FA; margin: 0; padding: 0; color: #333; }
         .wrapper { max-width: 1000px; margin: auto; padding: 20px;}
-        
-        /* Barra de Navegación Global */
         .global-nav { background: #1A73E8; padding: 12px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; position: sticky; top: 0; z-index: 1000; }
         .nav-container { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .nav-logo { color: white; text-decoration: none; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .nav-logo:hover { opacity: 0.8; }
         .nav-items { display: flex; gap: 10px; flex-wrap: wrap; }
         .nav-items a { color: rgba(255,255,255,0.9); text-decoration: none; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; transition: 0.3s; }
         .nav-items a:hover { background: rgba(255,255,255,0.2); color: white; }
         .nav-items a.btn-logout { background: #D93025; color: white; }
-        .nav-items a.btn-logout:hover { background: #B3261E; }
-
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; }
         h2 { color: #1A73E8; margin-top: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #E8EAED; padding-bottom: 10px; margin-bottom: 20px; }
-        
         .form-group { margin-bottom: 15px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { display: block; font-weight: 500; margin-bottom: 5px; color: #5F6368; font-size: 14px;}
@@ -30,25 +24,26 @@
         input:focus, select:focus { border-color: #1A73E8; }
         input[readonly] { background-color: #E8EAED; color: #5F6368; cursor: not-allowed; }
         button[type="submit"] { background: #1E8E3E; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; width: 100%; transition: 0.3s; }
-        button[type="submit"]:hover { background: #146c2e; }
+        button[type="submit"]:hover { filter: brightness(0.9); }
         button[type="submit"]:disabled { background: #9AA0A6; cursor: not-allowed; }
-        
         .alert { padding: 15px; margin-top: 20px; border-radius: 4px; display: none; font-weight: 500; font-size: 14px; line-height: 1.5; }
         .alert.success { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
         .alert.error { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
-        .loading-indicator { font-size: 12px; color: #1A73E8; margin-top: 5px; display: none; }
-        
         .table-responsive { overflow-x: auto; max-height: 400px; border: 1px solid #E8EAED; border-radius: 4px; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #E8EAED; white-space: nowrap; }
         th { background-color: #F8F9FA; color: #5F6368; font-weight: 600; position: sticky; top: 0; z-index: 1;}
         tr:hover { background-color: #F1F3F4; }
-
-        /* Estilo para el módulo expansible de Costos */
         .costo-box { background: #F8F9FA; border: 1px dashed #1A73E8; padding: 20px; border-radius: 6px; margin-top: 15px; margin-bottom: 15px; display: none; animation: fadeIn 0.4s; }
-        .costo-toggle { background: #E8F0FE; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #1A73E8; display: none; align-items: center; gap: 10px; cursor: pointer; user-select: none; animation: fadeIn 0.3s;}
+        .costo-toggle { background: #E8F0FE; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #1A73E8; display: none; align-items: center; gap: 10px; cursor: pointer; user-select: none; animation: fadeIn 0.3s; }
         .costo-toggle input { width: 20px; height: 20px; cursor: pointer; }
         .costo-toggle label { margin: 0; font-weight: bold; color: #174EA6; cursor: pointer; font-size: 15px; }
+        .btn-action { background: transparent; border: none; cursor: pointer; font-size: 15px; margin: 0 5px; transition: 0.2s;}
+        .btn-action:hover { transform: scale(1.2); }
+        .btn-edit { color: #F29900; }
+        .btn-delete { color: #D93025; }
+        .btn-refresh { background: transparent; color: #1A73E8; border: 1px solid #1A73E8; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; }
+        .btn-refresh:hover { background: #1A73E8; color: white; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -70,29 +65,25 @@
 
 <div class="wrapper">
     <div class="card">
-        <h2><i class="fa-solid fa-wallet"></i> Movimiento de Cuentas y Costos</h2>
-        <p style="font-size: 13px; color: #666; margin-bottom: 20px; margin-top: -10px;">Si registras una <strong>Salida</strong>, podrás asociarla automáticamente a los Costos de Materia Prima de un bache.</p>
+        <h2 id="formTitle"><i class="fa-solid fa-wallet"></i> Movimiento de Cuentas y Costos</h2>
         
         <form id="crudForm">
             <!-- PARTE 1: MOVIMIENTO ESTÁNDAR -->
             <div class="form-row">
-                <div class="form-group">
-                    <label>Fecha del Movimiento</label>
-                    <input type="date" id="fecha" required>
-                </div>
+                <div class="form-group"><label>Fecha</label><input type="date" id="fecha" required></div>
                 <div class="form-group">
                     <label>Tipo de Movimiento</label>
                     <select id="tipo" required onchange="manejarTipoMovimiento()">
                         <option value="">Seleccione...</option>
-                        <option value="Entrada">Entrada (Ingreso de dinero)</option>
-                        <option value="Salida">Salida (Gasto / Pago)</option>
+                        <option value="Entrada">Entrada (Ingreso)</option>
+                        <option value="Salida">Salida (Gasto)</option>
                     </select>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label>Canal / Cuenta Afectada</label>
+                    <label>Canal / Cuenta</label>
                     <select id="canal" required>
                         <option value="">Seleccione un canal...</option>
                         <option value="Efectivo">Efectivo</option>
@@ -100,21 +91,15 @@
                         <option value="Bancolombia">Bancolombia</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Valor ($)</label>
-                    <input type="number" id="valor" placeholder="Ej. 105000" required>
-                </div>
+                <div class="form-group"><label>Valor ($)</label><input type="number" id="valor" required></div>
             </div>
+            
+            <div class="form-group"><label>Descripción General</label><input type="text" id="descripcion" placeholder="Ej. Pago transporte, azúcar, corchos..." required></div>
 
-            <div class="form-group">
-                <label>Descripción General (Categoría del Gasto)</label>
-                <input type="text" id="descripcion" placeholder="Ej. transporte, azúcar, corchos..." required>
-            </div>
-
-            <!-- PARTE 2: VÍNCULO CON COSTOS DE MATERIA PRIMA (Aparece solo en Salidas) -->
+            <!-- PARTE 2: VÍNCULO CON COSTOS RELACIONALES -->
             <div class="costo-toggle" id="costoToggleContainer" onclick="document.getElementById('checkCosto').click();">
                 <input type="checkbox" id="checkCosto" onchange="toggleCostoSection(); event.stopPropagation();">
-                <label for="checkCosto"><i class="fa-solid fa-link"></i> Asociar este movimiento a los Costos de un Bache</label>
+                <label for="checkCosto" id="labelCheckCosto"><i class="fa-solid fa-link"></i> Asociar este movimiento a los Costos de un Bache</label>
             </div>
 
             <div id="sectionCostos" class="costo-box">
@@ -122,26 +107,23 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Código del Bache</label>
-                        <select id="codigoCosto">
-                            <option value="">Cargando códigos...</option>
-                        </select>
-                        <div id="loadingCodes" class="loading-indicator"><i class="fa-solid fa-spinner fa-spin"></i> Cargando...</div>
+                        <select id="codigoCosto"><option value="">Cargando códigos...</option></select>
                     </div>
-                    <div class="form-group">
-                        <label>Bache (Sabor)</label>
-                        <input type="text" id="bacheCosto" placeholder="Se autocompleta" readonly>
-                    </div>
+                    <div class="form-group"><label>Bache (Sabor)</label><input type="text" id="bacheCosto" placeholder="Se autocompleta" readonly required></div>
                 </div>
-                
                 <div class="form-group">
-                    <label>Descripción detallada de Materia Prima</label>
-                    <input type="text" id="descripcionCosto" placeholder="Ej. Compra de 15 kilos de mora a 7000...">
+                    <label>Categoría (Detalle del Gasto)</label>
+                    <select id="categoriaCosto">
+                        <option value="">Cargando categorías...</option>
+                    </select>
                 </div>
-
-                <p style="font-size: 12px; color: #666; margin: 0;">* La <strong>Descripción General</strong> (ej. azúcar, transporte) se enviará automáticamente a la columna <strong>Detalle Gasto</strong>.</p>
+                <p style="font-size: 12px; color: #666; margin: 0;">* La <strong>Descripción General</strong> del movimiento contable, se usará como el detalle explicativo en los Costos.</p>
             </div>
 
-            <button type="submit" id="submitBtn" disabled><i class="fa-solid fa-cloud-arrow-up"></i> Registrar Movimiento</button>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" id="submitBtn"><i class="fa-solid fa-cloud-arrow-up"></i> Registrar Movimiento</button>
+                <button type="button" id="cancelBtn" style="display:none; background:#5F6368; color:white; border:none; padding:12px 20px; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:10px;" onclick="cancelarEdicion()"><i class="fa-solid fa-times"></i> Cancelar</button>
+            </div>
         </form>
         <div id="statusMessage" class="alert"></div>
     </div>
@@ -149,22 +131,13 @@
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h2 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-list-ul"></i> Historial de Movimientos</h2>
-            <button class="btn-refresh" onclick="loadData(true)" style="background: transparent; color: #1A73E8; border: 1px solid #1A73E8; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-arrows-rotate"></i> Refrescar</button>
+            <button class="btn-refresh" onclick="loadData(true)"><i class="fa-solid fa-arrows-rotate"></i> Refrescar</button>
         </div>
         <div class="table-responsive">
             <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th style="color:#1A73E8;">ID Mov.</th>
-                        <th>Fecha</th>
-                        <th>Tipo</th>
-                        <th>Canal</th>
-                        <th>Valor</th>
-                        <th>Descripción</th>
-                    </tr>
-                </thead>
+                <thead><tr><th style="color:#1A73E8;">ID Mov.</th><th>Fecha</th><th>Tipo</th><th>Canal</th><th>Valor</th><th>Descripción</th><th style="text-align:center;">Acciones</th></tr></thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="6" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Consultando base de datos...</td></tr>
+                    <tr><td colspan="7" style="text-align:center; padding: 20px; color: #1A73E8;"><i class="fa-solid fa-spinner fa-spin fa-lg"></i> <strong>Sincronizando con la base de datos...</strong></td></tr>
                 </tbody>
             </table>
         </div>
@@ -173,14 +146,19 @@
 
 <script>
     function cerrarSesionGlobal() { sessionStorage.removeItem("accesoAgustin"); window.location.href = "index.html"; }
-
+    
+    // URL MAESTRA
     const CONFIG = { scriptUrl: 'https://script.google.com/macros/s/AKfycby-IrI3W6HDggRLF_4c9pqE8Qf3t5EclQZXH8pOi3a6y8kELMrmumSzCOkrcKUFjpxu8Q/exec' };
     
-    let baseData = { Movimientos: [] };
+    let baseData = { Movimientos: [], Costos: [] };
     let mapaCodigos = {};
+    let modoEdicion = false;
+    let filaEnEdicion = null;
+    let filaCostoAsociada = null; // Almacenará la fila del costo si existe
+    let idMovimientoActual = null;
+    let idVentasAsociado = "";
 
     const normalizeString = (str) => typeof str === 'string' ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : '';
-    
     const getVal = (row, key) => {
         const normKey = normalizeString(key);
         const foundKey = Object.keys(row).find(k => normalizeString(k) === normKey);
@@ -192,240 +170,321 @@
         let str = String(dateStr).trim();
         if (str.match(/^\d{1,2}\/\d{1,2}\/\d{2,4}$/)) {
             let parts = str.split('/');
-            let y = parseInt(parts[2], 10);
-            if (y < 100) y += 2000;
+            let y = parseInt(parts[2], 10); if (y < 100) y += 2000;
             return new Date(y, parseInt(parts[1], 10)-1, parseInt(parts[0], 10)).getTime();
         }
         let d = new Date(str);
-        if (!isNaN(d.getTime())) return d.getTime();
-        return 0;
+        if (!isNaN(d.getTime())) return d.getTime(); return 0;
     }
 
-    // UX: Manejar visibilidad del botón de Asociar a Costos
     function manejarTipoMovimiento() {
         const tipo = document.getElementById('tipo').value;
         const toggleContainer = document.getElementById('costoToggleContainer');
         const checkCosto = document.getElementById('checkCosto');
 
         if (tipo === 'Salida') {
-            toggleContainer.style.display = 'flex'; // Mostrar botón
+            toggleContainer.style.display = 'flex';
         } else {
-            toggleContainer.style.display = 'none'; // Ocultar botón
-            checkCosto.checked = false; // Desmarcar si estaba marcado
-            toggleCostoSection(); // Ocultar sección de costos
+            toggleContainer.style.display = 'none'; 
+            checkCosto.checked = false; 
+            toggleCostoSection();
         }
     }
 
-    // UX Expansible (Sección Costos)
     function toggleCostoSection() {
         const isChecked = document.getElementById('checkCosto').checked;
         const section = document.getElementById('sectionCostos');
         const codigoSel = document.getElementById('codigoCosto');
-        const descCosto = document.getElementById('descripcionCosto');
+        const categoriaSel = document.getElementById('categoriaCosto');
 
         if(isChecked) {
-            section.style.display = 'block';
-            codigoSel.setAttribute('required', 'true');
-            descCosto.setAttribute('required', 'true');
+            section.style.display = 'block'; 
+            codigoSel.setAttribute('required', 'true'); 
+            categoriaSel.setAttribute('required', 'true');
         } else {
-            section.style.display = 'none';
-            codigoSel.removeAttribute('required');
-            descCosto.removeAttribute('required');
-            codigoSel.value = "";
-            document.getElementById('bacheCosto').value = "";
-            descCosto.value = "";
+            section.style.display = 'none'; 
+            codigoSel.removeAttribute('required'); 
+            categoriaSel.removeAttribute('required');
+            codigoSel.value = ""; 
+            document.getElementById('bacheCosto').value = ""; 
+            categoriaSel.value = "";
         }
     }
 
-    // Generador de ID Automático
     function generarIdMovimiento(tipoStr) {
-        const isEntrada = tipoStr.toLowerCase().includes('entrada');
-        const prefijo = isEntrada ? 'MVTENT' : 'MVTSAL';
-        
+        const prefijo = tipoStr.toLowerCase().includes('entrada') ? 'MVTENT' : 'MVTSAL';
         let maxNum = 0;
         baseData.Movimientos.forEach(row => {
             const idObj = getVal(row, 'ID MOVIMIENTO') || getVal(row, 'ID_MOVIMIENTO') || '';
             if(idObj && typeof idObj === 'string' && idObj.startsWith(prefijo)) {
-                const numStr = idObj.replace(prefijo, '');
-                const num = parseInt(numStr, 10);
-                if(!isNaN(num) && num > maxNum) {
-                    maxNum = num;
-                }
+                const num = parseInt(idObj.replace(prefijo, ''), 10);
+                if(!isNaN(num) && num > maxNum) maxNum = num;
             }
         });
-
         return prefijo + (maxNum + 1);
     }
 
     async function loadData(isRefresh = false) {
-        const selectCodigo = document.getElementById('codigoCosto');
-        const loadingCodes = document.getElementById('loadingCodes');
-        const btnSubmit = document.getElementById('submitBtn');
-        const tbody = document.getElementById('tableBody');
-        
-        if(!isRefresh) loadingCodes.style.display = 'block';
-        
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #1A73E8;"><i class="fa-solid fa-spinner fa-spin fa-lg"></i> <strong>Sincronizando con la base de datos...</strong></td></tr>';
+
         try {
-            const urlConCacheBuster = CONFIG.scriptUrl + '?t=' + new Date().getTime();
-            const response = await fetch(urlConCacheBuster);
-            const db = await response.json();
+            const res = await fetch(CONFIG.scriptUrl + '?t=' + new Date().getTime());
+            const db = await res.json();
             
-            // 1. Cargar Códigos de Producción Activos
+            // 1. CARGAR CÓDIGOS ACTIVOS (Dashboard)
             let dashboardData = db.Dashboard || [];
-            if (dashboardData && dashboardData.length > 0) {
-                mapaCodigos = {};
-                const currentSelection = selectCodigo.value;
+            if (dashboardData.length > 0) {
+                mapaCodigos = {}; 
                 let newOptionsHtml = '<option value="">Seleccione un Código...</option>';
-                
                 dashboardData.forEach(row => {
-                    const cod = getVal(row, 'Codigo');
-                    const bache = getVal(row, 'Bache');
+                    const cod = getVal(row, 'Codigo'); 
+                    const bache = getVal(row, 'Bache'); 
                     const estado = getVal(row, 'Estado'); 
                     
-                    if(cod && String(cod).trim() !== "" && !mapaCodigos[cod] && String(estado).trim() === "1") {
-                        mapaCodigos[cod] = bache;
-                        newOptionsHtml += `<option value="${cod}">${cod} - ${bache}</option>`;
+                    if(cod && String(estado).trim() === "1") { 
+                        mapaCodigos[cod] = bache; 
+                        newOptionsHtml += `<option value="${cod}">${cod} - ${bache}</option>`; 
                     }
                 });
-                selectCodigo.innerHTML = newOptionsHtml;
-                if(currentSelection && mapaCodigos[currentSelection]) selectCodigo.value = currentSelection;
+                document.getElementById('codigoCosto').innerHTML = newOptionsHtml;
             }
-            if(!isRefresh) loadingCodes.style.display = 'none';
-            btnSubmit.disabled = false;
 
-            // 2. Cargar Grilla Movimientos
-            let tableData = db.Movimientos || [];
-            baseData.Movimientos = tableData; 
+            // 2. CARGAR CATEGORÍAS
+            let categoriasData = db.Categorias || [];
+            let catHtml = '<option value="">Seleccione una categoría...</option>';
+            categoriasData.forEach(row => {
+                let catName = getVal(row, 'Categoria') || getVal(row, 'Nombre') || getVal(row, 'Categorias');
+                let estado = getVal(row, 'Estado');
+                // Si no hay columna estado, asume activo. Si la hay, debe ser '1' o 'activo'
+                if (catName && (estado === '' || String(estado).trim() === '1' || String(estado).toLowerCase() === 'activo')) {
+                    catHtml += `<option value="${catName}">${catName}</option>`;
+                }
+            });
+            document.getElementById('categoriaCosto').innerHTML = catHtml;
 
-            let dataFiltrada = tableData.filter(row => getVal(row, 'Fecha') !== '');
-            dataFiltrada.forEach((row, index) => { row._filaOriginal = index; });
+            // 3. CARGAR BASE DE COSTOS (Para validación relacional)
+            baseData.Costos = db.CostosMateria || [];
 
+            // 4. CARGAR GRILLA DE MOVIMIENTOS
+            baseData.Movimientos = db.Movimientos || []; 
+            let dataFiltrada = baseData.Movimientos.filter(row => getVal(row, 'Fecha') !== '');
             dataFiltrada.sort((a, b) => {
-                let diffFecha = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
-                if (diffFecha === 0) return b._filaOriginal - a._filaOriginal;
-                return diffFecha;
+                let diff = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
+                return diff === 0 ? b._rowNumber - a._rowNumber : diff;
             });
             
             let newHtml = '';
-            if(dataFiltrada.length === 0) {
-                newHtml = '<tr><td colspan="6" style="text-align:center;">No hay registros actualmente.</td></tr>';
-            } else {
+            if(dataFiltrada.length === 0) newHtml = '<tr><td colspan="7" style="text-align:center;">Sin registros</td></tr>';
+            else {
                 dataFiltrada.forEach(row => {
+                    let rowEncoded = encodeURIComponent(JSON.stringify(row));
                     const idMov = getVal(row, 'ID MOVIMIENTO') || getVal(row, 'ID_MOVIMIENTO') || '-';
                     newHtml += `<tr>
                         <td style="font-weight:bold; color:#1A73E8;">${idMov}</td>
                         <td>${getVal(row, 'Fecha')}</td>
                         <td>${getVal(row, 'Tipo')}</td>
                         <td>${getVal(row, 'Canal')}</td>
-                        <td style="font-weight:bold;">${getVal(row, 'Valor')}</td>
+                        <td style="font-weight:bold;">$${getVal(row, 'Valor')}</td>
                         <td style="font-size:12px; color:#555;">${getVal(row, 'Descripcion') || getVal(row, 'Descripción')}</td>
+                        <td style="text-align:center;">
+                            <button class="btn-action btn-edit" onclick="editarRegistro('${rowEncoded}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-action btn-delete" onclick="eliminarRegistro(${row._rowNumber}, '${idMov}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     </tr>`;
                 });
             }
-            tbody.innerHTML = newHtml;
-
-        } catch (error) {
-            console.log(error);
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#D93025;">Error de conexión.</td></tr>`;
+            document.getElementById('tableBody').innerHTML = newHtml;
+        } catch (error) { 
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:#D93025; padding: 20px;"><i class="fa-solid fa-triangle-exclamation"></i> Error de conexión.</td></tr>`; 
         }
     }
 
+    // AUTOCOMPLETADO DE SABOR PARA COSTOS
     document.getElementById('codigoCosto').addEventListener('change', function(e) {
-        const cod = e.target.value;
-        document.getElementById('bacheCosto').value = (cod && mapaCodigos[cod]) ? mapaCodigos[cod] : '';
+        document.getElementById('bacheCosto').value = mapaCodigos[e.target.value] || '';
     });
 
     window.onload = () => loadData(false);
 
+    // ==========================================
+    // LÓGICA DE EDICIÓN Y ELIMINACIÓN RELACIONAL
+    // ==========================================
+    function editarRegistro(rowStr) {
+        if(!confirm("¿Está seguro que desea EDITAR este movimiento? Si tiene Costos de Materia Prima asociados, también se editarán.")) return;
+        
+        const row = JSON.parse(decodeURIComponent(rowStr));
+        modoEdicion = true; 
+        filaEnEdicion = row._rowNumber;
+        filaCostoAsociada = null; // Reseteamos por precaución
+        
+        idMovimientoActual = getVal(row, 'ID MOVIMIENTO') || getVal(row, 'ID_MOVIMIENTO');
+        idVentasAsociado = getVal(row, 'ID VENTAS') || getVal(row, 'ID_VENTAS') || ""; 
+        
+        // Asignar campos básicos
+        let fechaStr = getVal(row, 'Fecha');
+        if(fechaStr) {
+            let parts = fechaStr.split('/');
+            document.getElementById('fecha').value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+        document.getElementById('tipo').value = getVal(row, 'Tipo');
+        
+        let canalStr = getVal(row, 'Canal').toLowerCase();
+        let canalSelect = document.getElementById('canal');
+        Array.from(canalSelect.options).forEach(opt => { if(opt.value.toLowerCase() === canalStr) canalSelect.value = opt.value; });
+
+        document.getElementById('valor').value = getVal(row, 'Valor');
+        document.getElementById('descripcion').value = getVal(row, 'Descripcion') || getVal(row, 'Descripción');
+
+        manejarTipoMovimiento(); // Muestra la opción de costo si es Salida
+
+        // BÚSQUEDA RELACIONAL: ¿Existe un costo asociado a este ID?
+        let costoRelacionado = baseData.Costos.find(c => (getVal(c, 'ID MOVIMIENTO') || getVal(c, 'ID_MOVIMIENTO')) === idMovimientoActual);
+        
+        if (costoRelacionado) {
+            filaCostoAsociada = costoRelacionado._rowNumber;
+            document.getElementById('checkCosto').checked = true;
+            toggleCostoSection();
+            
+            // Asignar datos del costo histórico
+            document.getElementById('codigoCosto').value = getVal(costoRelacionado, 'Codigo');
+            document.getElementById('bacheCosto').value = getVal(costoRelacionado, 'Bache');
+            
+            let catOriginal = getVal(costoRelacionado, 'Detalle gasto') || getVal(costoRelacionado, 'Detalle_gasto') || '';
+            let catSelect = document.getElementById('categoriaCosto');
+            Array.from(catSelect.options).forEach(opt => {
+                if (opt.value.toLowerCase() === catOriginal.toLowerCase()) catSelect.value = opt.value;
+            });
+        }
+
+        document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editando Movimiento (' + idMovimientoActual + ')';
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
+        btn.style.background = '#F29900';
+        document.getElementById('cancelBtn').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicion() {
+        modoEdicion = false; 
+        filaEnEdicion = null; 
+        filaCostoAsociada = null;
+        idMovimientoActual = null; 
+        idVentasAsociado = "";
+        
+        document.getElementById('crudForm').reset(); 
+        manejarTipoMovimiento(); 
+        
+        document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-wallet"></i> Movimiento de Cuentas y Costos';
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Movimiento';
+        btn.style.background = '#1E8E3E';
+        document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    async function eliminarRegistro(rowNumber, idMovimiento) {
+        if(!confirm("⚠️ ¿Está seguro que desea ELIMINAR este movimiento contable? \n\nSi tiene registrado un Costo de Materia Prima en el sistema, también se eliminará automáticamente para evitar descuadres.")) return;
+        
+        try {
+            // 1. Eliminar Movimiento
+            let req1 = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", action: "delete", rowNumber: rowNumber }) });
+            let res1 = await req1.json();
+            if(res1.status !== 'Success') throw new Error("Fallo al eliminar el movimiento de cuentas.");
+
+            // 2. Eliminar Costo Relacional (Si existe)
+            let costoRelacionado = baseData.Costos.find(c => (getVal(c, 'ID MOVIMIENTO') || getVal(c, 'ID_MOVIMIENTO')) === idMovimiento);
+            if (costoRelacionado) {
+                let req2 = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "costosmateriaprima", action: "delete", rowNumber: costoRelacionado._rowNumber }) });
+                let res2 = await req2.json();
+                if(res2.status !== 'Success') throw new Error("Se eliminó el movimiento, pero falló la limpieza del Costo asociado.");
+            }
+
+            alert("Operación de borrado relacional ejecutada con éxito.");
+            loadData(true);
+        } catch(e) { 
+            alert("Error: " + e.message); 
+            loadData(true);
+        }
+    }
+
+    // ==========================================
+    // ENVÍO DE DATOS AL SERVIDOR (INTEGRIDAD REFERENCIAL)
+    // ==========================================
     document.getElementById('crudForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const isCostoChecked = document.getElementById('checkCosto').checked;
         const tipoMov = document.getElementById('tipo').value;
-        
         const rawDate = document.getElementById('fecha').value;
         let formattedDate = `${rawDate.split('-')[2]}/${rawDate.split('-')[1]}/${rawDate.split('-')[0]}`;
         
-        const canalVal = document.getElementById('canal').value;
-        const valorVal = document.getElementById('valor').value;
-        const descVal = document.getElementById('descripcion').value; // Va a Movimientos y a 'Detalle gasto'
+        let idMovFinal = modoEdicion ? idMovimientoActual : generarIdMovimiento(tipoMov);
 
-        // GENERAR ID ÚNICO
-        const nuevoIdMovimiento = generarIdMovimiento(tipoMov);
-
-        // ============================================
-        // FILA 1: PARA TABLA "movimiento_cuentas"
-        // ============================================
+        // MAPEO 1: Movimientos_Cuentas
         const rowDataMovimientos = [
-            formattedDate, 
-            tipoMov, 
-            canalVal, 
-            valorVal, 
-            descVal, 
-            "", // ID VENTAS vacío
-            nuevoIdMovimiento
+            formattedDate, tipoMov, document.getElementById('canal').value, 
+            document.getElementById('valor').value, document.getElementById('descripcion').value, 
+            idVentasAsociado, idMovFinal
         ];
 
-        // ============================================
-        // FILA 2 (Opcional): PARA TABLA "costos materia prima"
-        // Estructura de la Base: Fecha | Codigo | Bache | Detalle gasto | valor | Descripcion | ID MOVIMIENTO
-        // ============================================
+        // MAPEO 2: Costos Materia Prima
+        // Fecha | Codigo | Bache | Detalle gasto (Categoria) | valor | Descripcion | ID MOVIMIENTO
         let rowDataCostos = [];
         if (isCostoChecked) {
-            const codCosto = document.getElementById('codigoCosto').value;
-            const bacheCosto = document.getElementById('bacheCosto').value;
-            const descCostoVal = document.getElementById('descripcionCosto').value; // Nueva entrada manual
-            
             rowDataCostos = [
-                formattedDate,
-                codCosto,
-                bacheCosto,
-                descVal,       // La "Descripción General" va al campo "Detalle gasto"
-                valorVal,
-                descCostoVal,  // El nuevo campo manual va a la columna "Descripción"
-                nuevoIdMovimiento
+                formattedDate, 
+                document.getElementById('codigoCosto').value, 
+                document.getElementById('bacheCosto').value,
+                document.getElementById('categoriaCosto').value, // La lista desplegable va a 'Detalle gasto'
+                document.getElementById('valor').value, 
+                document.getElementById('descripcion').value, // El campo general va a 'Descripcion'
+                idMovFinal
             ];
         }
 
-        const btn = document.getElementById('submitBtn');
+        const btn = document.getElementById('submitBtn'); 
         const status = document.getElementById('statusMessage');
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
-        btn.disabled = true;
-        status.style.display = 'none';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...'; 
+        btn.disabled = true; status.style.display = 'none';
 
         try {
-            // 1. Guardar Movimiento Base
-            let reqMov = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", rowData: rowDataMovimientos }) });
+            // OPERACIÓN 1: Guardar Movimiento Base
+            let actionStr = modoEdicion ? "update" : "append";
+            let payload = { sheetName: "movimiento_cuentas", action: actionStr, rowData: rowDataMovimientos };
+            if (modoEdicion) payload.rowNumber = filaEnEdicion;
+
+            let reqMov = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
             let resMov = await reqMov.json();
-            if(resMov.status !== 'Success') throw new Error('Falló el guardado en Movimientos.');
+            if(resMov.status !== 'Success') throw new Error('Error al guardar movimiento.');
 
-            // 2. Guardar Costo Materia Prima
+            // OPERACIÓN 2: Lógica Relacional de Costos
             if (isCostoChecked) {
-                let reqCost = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "costosmateriaprima", rowData: rowDataCostos }) });
-                let resCost = await reqCost.json();
-                if(resCost.status !== 'Success') throw new Error('Se guardó el movimiento, pero falló el registro del Costo.');
+                // Si el usuario marcó el check y ya existía en BD, lo actualizamos. Si no, lo creamos.
+                let payloadCosto = { sheetName: "costosmateriaprima", rowData: rowDataCostos };
+                if (modoEdicion && filaCostoAsociada) {
+                    payloadCosto.action = "update";
+                    payloadCosto.rowNumber = filaCostoAsociada;
+                } else {
+                    payloadCosto.action = "append";
+                }
+                await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payloadCosto) });
+            
+            } else if (modoEdicion && filaCostoAsociada && !isCostoChecked) {
+                // Si estaba marcado en la BD, pero el usuario le quitó el Check durante la edición: Se ELIMINA de Costos.
+                await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "costosmateriaprima", action: "delete", rowNumber: filaCostoAsociada }) });
             }
 
-            status.className = 'alert success';
+            status.className = 'alert success'; 
             status.style.display = 'block'; 
+            status.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${modoEdicion ? 'Actualización relacional completada' : 'Movimiento y Costo registrados'} exitosamente.`;
             
-            if (isCostoChecked) {
-                status.innerHTML = `<i class="fa-solid fa-circle-check"></i> Éxito Relacional: Se guardó el movimiento bancario y se asignó el costo al Bache <strong>${document.getElementById('codigoCosto').value}</strong> con el ID: <strong>${nuevoIdMovimiento}</strong>.`;
-            } else {
-                status.innerHTML = `<i class="fa-solid fa-circle-check"></i> Movimiento contable guardado exitosamente con ID: <strong>${nuevoIdMovimiento}</strong>.`;
-            }
-            
-            document.getElementById('crudForm').reset();
-            manejarTipoMovimiento(); // Oculta la sección de costos si el form se reinicia
-            
-            setTimeout(() => loadData(true), 2500);
-
+            cancelarEdicion(); 
+            setTimeout(() => loadData(true), 1500);
         } catch (error) {
-            status.className = 'alert error';
-            status.style.display = 'block';
-            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error Crítico: ' + error.message;
+            status.className = 'alert error'; 
+            status.style.display = 'block'; 
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error Crítico en la actualización.';
         } finally {
-            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Movimiento';
+            btn.innerHTML = modoEdicion ? '<i class="fa-solid fa-save"></i> Guardar Cambios' : '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Movimiento';
             btn.disabled = false;
         }
     });
