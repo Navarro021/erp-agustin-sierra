@@ -9,7 +9,6 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #F8F9FA; margin: 0; padding: 0; color: #333; }
         .wrapper { max-width: 1100px; margin: auto; padding: 20px;}
         
-        /* Barra de Navegación Global */
         .global-nav { background: #1A73E8; padding: 12px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; position: sticky; top: 0; z-index: 1000; }
         .nav-container { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .nav-logo { color: white; text-decoration: none; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
@@ -23,7 +22,6 @@
         .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; }
         h2 { color: #1A73E8; margin-top: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #E8EAED; padding-bottom: 10px; margin-bottom: 20px; }
         
-        /* Dashboard Dual (Fabrica vs PV) */
         .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;}
         .filter-date-box { background: white; padding: 8px 15px; border-radius: 6px; border: 1px solid #1A73E8; display: flex; gap: 10px; align-items: center; }
         .inv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px; }
@@ -39,7 +37,7 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #CCC; border-radius: 4px; font-size: 14px; outline: none; box-sizing: border-box; }
         input:focus, select:focus { border-color: #1A73E8; }
         button[type="submit"] { background: #1E8E3E; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; width: 100%; transition: 0.3s;}
-        button[type="submit"]:hover { background: #146C2E; }
+        button[type="submit"]:hover { filter: brightness(0.9); }
         button[type="submit"]:disabled { background: #9AA0A6; cursor: not-allowed; }
         
         .alert { padding: 15px; margin-top: 20px; border-radius: 4px; display: none; font-weight: 500; font-size: 14px; }
@@ -51,6 +49,13 @@
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #E8EAED; white-space: nowrap; }
         th { background-color: #F8F9FA; color: #5F6368; font-weight: 600; position: sticky; top: 0; z-index: 1;}
         tr:hover { background-color: #F1F3F4; }
+        
+        .btn-action { background: transparent; border: none; cursor: pointer; font-size: 15px; margin: 0 5px; transition: 0.2s;}
+        .btn-action:hover { transform: scale(1.2); }
+        .btn-edit { color: #F29900; }
+        .btn-delete { color: #D93025; }
+        .btn-refresh { background: transparent; color: #1A73E8; border: 1px solid #1A73E8; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; }
+        .btn-refresh:hover { background: #1A73E8; color: white; }
     </style>
 </head>
 <body>
@@ -71,7 +76,6 @@
 
 <div class="wrapper">
     
-    <!-- Dashboard de Botellas Vacías -->
     <div class="dash-header">
         <h2 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-boxes-stacked"></i> Inventario Botellas Vacías</h2>
         <div class="filter-date-box">
@@ -93,11 +97,9 @@
         </div>
     </div>
 
-    <!-- Formulario -->
     <div class="card">
-        <h2><i class="fa-solid fa-truck-ramp-box"></i> Registrar Movimiento de Vacías</h2>
-        <p style="font-size: 13px; color: #666; margin-bottom: 20px; margin-top: -10px;">Sincronizado con la hoja <strong>"Control botellas vacias"</strong>.</p>
-
+        <h2 id="formTitle"><i class="fa-solid fa-truck-ramp-box"></i> Registrar Movimiento de Vacías</h2>
+        
         <form id="crudForm">
             <div class="form-row">
                 <div class="form-group">
@@ -143,7 +145,10 @@
                     <input type="text" id="observaciones" placeholder="Ej. 10 cajas, botella quebrada, etc.">
                 </div>
             </div>
-            <button type="submit" id="submitBtn"><i class="fa-solid fa-floppy-disk"></i> Guardar Movimiento</button>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" id="submitBtn"><i class="fa-solid fa-floppy-disk"></i> Guardar Movimiento</button>
+                <button type="button" id="cancelBtn" style="display:none; background:#5F6368; color:white; border:none; padding:12px 20px; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:10px;" onclick="cancelarEdicion()"><i class="fa-solid fa-times"></i> Cancelar</button>
+            </div>
         </form>
         <div id="statusMessage" class="alert"></div>
     </div>
@@ -152,26 +157,15 @@
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h2 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-list-ul"></i> Historial (Botellas Vacías)</h2>
-            <button class="btn-refresh" onclick="fetchData()" style="background: transparent; color: #1A73E8; border: 1px solid #1A73E8; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;"><i class="fa-solid fa-arrows-rotate"></i> Refrescar</button>
+            <button class="btn-refresh" onclick="fetchData()"><i class="fa-solid fa-arrows-rotate"></i> Refrescar</button>
         </div>
         <div class="table-responsive">
             <table id="dataTableVacias">
-                <thead><tr><th>Fecha</th><th>Movimiento</th><th>Tamaño</th><th>Cantidad</th><th>Bodega</th><th>Observaciones</th></tr></thead>
-                <tbody id="tableBodyVacias"><tr><td colspan="6" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Consultando base de datos...</td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Grilla Historial Producción -->
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h2 style="margin: 0; border: none; padding: 0;"><i class="fa-solid fa-boxes-packing"></i> Historial (Producción / Producto Terminado)</h2>
-        </div>
-        <p style="font-size: 13px; color: #666; margin-top: -5px; margin-bottom: 15px;">Botellas llenas fabricadas.</p>
-        <div class="table-responsive">
-            <table id="dataTableProduccion">
-                <thead><tr><th>Fecha</th><th>Código</th><th>Bache</th><th>Cant.</th><th>Tamaño</th><th>Mes</th><th>Año</th></tr></thead>
-                <tbody id="tableBodyProduccion"><tr><td colspan="7" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Consultando base de datos...</td></tr></tbody>
+                <thead><tr><th>Fecha</th><th>Movimiento</th><th>Tamaño</th><th>Cantidad</th><th>Bodega</th><th>Observaciones</th><th style="text-align:center;">Acciones</th></tr></thead>
+                <tbody id="tableBodyVacias">
+                    <!-- El mensaje de carga inicial -->
+                    <tr><td colspan="7" style="text-align:center; padding: 20px; color: #1A73E8;"><i class="fa-solid fa-spinner fa-spin fa-lg"></i> Sincronizando con la base de datos...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -180,11 +174,13 @@
 <script>
     function cerrarSesionGlobal() { sessionStorage.removeItem("accesoAgustin"); window.location.href = "index.html"; }
 
-    // Aquí está tu nueva URL inyectada
     const CONFIG = { scriptUrl: 'https://script.google.com/macros/s/AKfycby-IrI3W6HDggRLF_4c9pqE8Qf3t5EclQZXH8pOi3a6y8kELMrmumSzCOkrcKUFjpxu8Q/exec' };
     
-    // VARIABLES GLOBALES
     let baseData = { BotellasVacias: [], Produccion: [] };
+    
+    // VARIABLES GLOBALES PARA EDICIÓN
+    let modoEdicion = false;
+    let filaEnEdicion = null;
 
     const normalizeString = (str) => typeof str === 'string' ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : '';
     
@@ -218,37 +214,28 @@
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         document.getElementById('fechaCorteInv').value = `${yyyy}-${mm}-${dd}`;
-        
         fetchData();
     };
 
     async function fetchData() {
+        // MEJORA UX: Feedback visual inmediato
+        document.getElementById('tableBodyVacias').innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px; color: #1A73E8;"><i class="fa-solid fa-spinner fa-spin fa-lg"></i> <strong>Sincronizando con la base de datos...</strong></td></tr>';
+
         try {
-            const urlConCacheBuster = CONFIG.scriptUrl + '?t=' + new Date().getTime();
-            const res = await fetch(urlConCacheBuster);
+            const res = await fetch(CONFIG.scriptUrl + '?t=' + new Date().getTime());
             const db = await res.json();
-
-            if (db.BotellasVacias === undefined) {
-                alert("🚨 ERROR: No se encontró la hoja Botellas Vacías.");
-                return;
-            }
-
             baseData.BotellasVacias = db.BotellasVacias || [];
             baseData.Produccion = db.Produccion || [];
-
             calcularInventario();
             renderGrillas();
-
         } catch (e) { 
-            console.log(e);
-            document.getElementById('tableBodyVacias').innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Fallo la conexión.</td></tr>`;
+            document.getElementById('tableBodyVacias').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding: 20px;"><i class="fa-solid fa-triangle-exclamation"></i> Fallo la conexión con la base de datos.</td></tr>`;
         }
     }
 
     function calcularInventario() {
         let fechaFiltro = document.getElementById('fechaCorteInv').value;
         if(!fechaFiltro) return;
-        
         let parts = fechaFiltro.split('-');
         let limiteTimestamp = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59).getTime();
 
@@ -256,25 +243,20 @@
         
         baseData.BotellasVacias.forEach(row => {
             let fechaFila = parseCustomDate(getVal(row, 'Fecha'));
-            
             if (fechaFila > 0 && fechaFila <= limiteTimestamp) {
                 let tipo = normalizeString(getVal(row, 'Movimiento') || getVal(row, 'Entrada/Salida'));
                 let tamanoStr = String(getVal(row, 'Tamaño') || getVal(row, 'Tamano')).toLowerCase();
                 let cant = parseInt(getVal(row, 'Cantidad')) || 0;
-                let bodega = normalizeString(getVal(row, 'Bodega') || getVal(row, 'Origen') || getVal(row, 'Destino'));
+                let bodega = normalizeString(getVal(row, 'Bodega') || getVal(row, 'Origen'));
                 
-                let tam = '';
-                if(tamanoStr.includes('750')) tam = '750ml';
-                if(tamanoStr.includes('330')) tam = '330ml';
+                let tam = tamanoStr.includes('750') ? '750ml' : (tamanoStr.includes('330') ? '330ml' : '');
                 if(!tam) return;
                 
-                // PUNTO DE VENTA
                 if(tipo.includes('entrada') && bodega === 'punto venta') vacias[tam].pv += cant;
                 if(tipo.includes('salida') && bodega === 'fabrica a punto venta') vacias[tam].pv += cant;
                 if(tipo.includes('salida') && bodega === 'punto venta') vacias[tam].pv -= cant;
                 if(tipo.includes('salida') && bodega === 'punto venta a fabrica') vacias[tam].pv -= cant;
 
-                // FÁBRICA
                 if(tipo.includes('entrada') && bodega === 'fabrica') vacias[tam].fab += cant;
                 if(tipo.includes('salida') && bodega === 'punto venta a fabrica') vacias[tam].fab += cant;
                 if(tipo.includes('salida') && bodega === 'fabrica') vacias[tam].fab -= cant;
@@ -285,15 +267,8 @@
         baseData.Produccion.forEach(row => {
             let fechaFila = parseCustomDate(getVal(row, 'Fecha'));
             if (fechaFila > 0 && fechaFila <= limiteTimestamp) {
-                let tamanoStr = String(getVal(row, 'Tamaño') || getVal(row, 'Tamano')).toLowerCase();
-                let cant = parseInt(getVal(row, 'Cantidad')) || 0;
-                let tam = '';
-                if(tamanoStr.includes('750')) tam = '750ml';
-                if(tamanoStr.includes('330')) tam = '330ml';
-                
-                if(tam && vacias[tam]) {
-                    vacias[tam].fab -= cant;
-                }
+                let tam = String(getVal(row, 'Tamaño') || getVal(row, 'Tamano')).toLowerCase().includes('750') ? '750ml' : '330ml';
+                if(vacias[tam]) vacias[tam].fab -= (parseInt(getVal(row, 'Cantidad')) || 0);
             }
         });
 
@@ -307,19 +282,17 @@
         let htmlVacias = '';
         let tableDataVacias = [...baseData.BotellasVacias]; 
         
-        tableDataVacias.forEach((row, index) => { row._filaOriginal = index; });
         let dataFiltradaVacias = tableDataVacias.filter(row => getVal(row, 'Fecha') !== '');
-        
         dataFiltradaVacias.sort((a, b) => {
-            let diffFecha = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
-            if (diffFecha === 0) return b._filaOriginal - a._filaOriginal;
-            return diffFecha;
+            let diff = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
+            return diff === 0 ? b._rowNumber - a._rowNumber : diff;
         });
 
         if(dataFiltradaVacias.length === 0) {
-            htmlVacias = '<tr><td colspan="6" style="text-align:center;">Sin registros</td></tr>';
+            htmlVacias = '<tr><td colspan="7" style="text-align:center;">Sin registros</td></tr>';
         } else {
             dataFiltradaVacias.forEach(row => {
+                let rowEncoded = encodeURIComponent(JSON.stringify(row));
                 htmlVacias += `<tr>
                     <td>${getVal(row, 'Fecha')}</td>
                     <td>${getVal(row, 'Movimiento') || getVal(row, 'Entrada/Salida')}</td>
@@ -327,102 +300,135 @@
                     <td>${getVal(row, 'Cantidad')}</td>
                     <td style="font-weight:bold; color:#1A73E8;">${getVal(row, 'Bodega') || getVal(row, 'Origen')}</td>
                     <td style="font-size: 12px; color: #555;">${getVal(row, 'Observaciones')}</td>
+                    <td style="text-align:center;">
+                        <button class="btn-action btn-edit" onclick="editarRegistro('${rowEncoded}')" title="Editar este registro"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-action btn-delete" onclick="eliminarRegistro(${row._rowNumber})" title="Eliminar permanentemente"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 </tr>`;
             });
         }
         document.getElementById('tableBodyVacias').innerHTML = htmlVacias;
-
-        let htmlProd = '';
-        let tableDataProd = [...baseData.Produccion]; 
-        
-        tableDataProd.forEach((row, index) => { row._filaOriginal = index; });
-        let dataFiltradaProd = tableDataProd.filter(row => getVal(row, 'Fecha') !== '');
-        
-        dataFiltradaProd.sort((a, b) => {
-            let diffFecha = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
-            if (diffFecha === 0) return b._filaOriginal - a._filaOriginal;
-            return diffFecha;
-        });
-
-        if(dataFiltradaProd.length === 0) {
-            htmlProd = '<tr><td colspan="7" style="text-align:center;">Sin registros de producción</td></tr>';
-        } else {
-            dataFiltradaProd.forEach(row => {
-                htmlProd += `<tr>
-                    <td>${getVal(row, 'Fecha')}</td>
-                    <td>${getVal(row, 'Codigo')}</td>
-                    <td>${getVal(row, 'Bache')}</td>
-                    <td>${getVal(row, 'Cantidad')}</td>
-                    <td>${getVal(row, 'Tamaño') || getVal(row, 'Tamano')}</td>
-                    <td>${getVal(row, 'Mes')}</td>
-                    <td>${getVal(row, 'Año') || getVal(row, 'Ano')}</td>
-                </tr>`;
-            });
-        }
-        document.getElementById('tableBodyProduccion').innerHTML = htmlProd;
     }
 
+    // ==========================================
+    // LÓGICA DE EDICIÓN Y ELIMINACIÓN
+    // ==========================================
+    function editarRegistro(rowStr) {
+        if(!confirm("¿Está seguro que desea EDITAR este registro? Se sobrescribirá la información en la base de datos.")) return;
+        
+        const row = JSON.parse(decodeURIComponent(rowStr));
+        modoEdicion = true;
+        filaEnEdicion = row._rowNumber;
+        
+        // 1. Transformar fecha
+        let fechaStr = getVal(row, 'Fecha');
+        if(fechaStr) {
+            let parts = fechaStr.split('/');
+            let y = parts[2]; let m = parts[1].padStart(2, '0'); let d = parts[0].padStart(2, '0');
+            document.getElementById('fecha').value = `${y}-${m}-${d}`;
+        }
+        
+        // 2. Poblar los demás campos
+        document.getElementById('movimiento').value = getVal(row, 'Movimiento') || getVal(row, 'Entrada/Salida');
+        
+        let tamanoRaw = String(getVal(row, 'Tamaño') || getVal(row, 'Tamano')).toLowerCase();
+        document.getElementById('tamano').value = tamanoRaw.includes('750') ? '750ml' : '330ml';
+        
+        document.getElementById('cantidad').value = getVal(row, 'Cantidad');
+        
+        let bodegaRaw = normalizeString(getVal(row, 'Bodega') || getVal(row, 'Origen'));
+        if(bodegaRaw === 'fabrica a punto venta') document.getElementById('bodega').value = 'Fabrica a Punto Venta';
+        else if(bodegaRaw === 'punto venta a fabrica') document.getElementById('bodega').value = 'Punto Venta a Fabrica';
+        else if(bodegaRaw === 'punto venta') document.getElementById('bodega').value = 'Punto Venta';
+        else if(bodegaRaw === 'fabrica') document.getElementById('bodega').value = 'Fabrica';
+        
+        document.getElementById('observaciones').value = getVal(row, 'Observaciones');
+
+        // 3. Cambiar visual del formulario
+        document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editando Registro (Fila ' + filaEnEdicion + ')';
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
+        btn.style.background = '#F29900';
+        document.getElementById('cancelBtn').style.display = 'block';
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicion() {
+        modoEdicion = false;
+        filaEnEdicion = null;
+        document.getElementById('crudForm').reset();
+        document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-truck-ramp-box"></i> Registrar Movimiento de Vacías';
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Movimiento';
+        btn.style.background = '#1E8E3E';
+        document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    async function eliminarRegistro(rowNumber) {
+        if(!confirm("⚠️ ¿Está seguro que desea ELIMINAR este registro? Esta acción borrará la fila de la base de datos de manera definitiva.")) return;
+        
+        try {
+            let req = await fetch(CONFIG.scriptUrl, { 
+                method: 'POST', 
+                body: JSON.stringify({ sheetName: "controlbotellasvacias", action: "delete", rowNumber: rowNumber }) 
+            });
+            let res = await req.json();
+            if(res.status !== 'Success') throw new Error(res.message);
+            alert("Registro eliminado exitosamente.");
+            fetchData();
+        } catch(e) {
+            alert("Error al eliminar: " + e.message);
+        }
+    }
+
+    // ==========================================
+    // ENVÍO AL SERVIDOR
+    // ==========================================
     document.getElementById('crudForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const mov = document.getElementById('movimiento').value;
         const bodega = document.getElementById('bodega').value;
-        
         if(bodega.toLowerCase().includes(" a ") && mov !== "Salida") {
             alert("Los traslados entre bodegas deben registrarse siempre como movimiento de 'Salida'."); return;
         }
 
         const rawDate = document.getElementById('fecha').value;
         let formattedDate = `${rawDate.split('-')[2]}/${rawDate.split('-')[1]}/${rawDate.split('-')[0]}`;
-        
-        const tamanoForm = document.getElementById('tamano').value;
-        const cantForm = document.getElementById('cantidad').value;
-        const obsForm = document.getElementById('observaciones').value;
-
-        // ACTUALIZACIÓN OPTIMISTA
-        const nuevoRegistroLocal = {
-            'Fecha': formattedDate,
-            'Movimiento': mov,
-            'Tamaño': tamanoForm,
-            'Cantidad': cantForm,
-            'Bodega': bodega,
-            'Observaciones': obsForm
-        };
-        
-        baseData.BotellasVacias.push(nuevoRegistroLocal); 
-        calcularInventario(); 
-        renderGrillas();      
-        
-        const rowData = [formattedDate, mov, tamanoForm, cantForm, bodega, obsForm];
+        const rowData = [
+            formattedDate, mov, document.getElementById('tamano').value, 
+            document.getElementById('cantidad').value, bodega, document.getElementById('observaciones').value
+        ];
         
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('statusMessage');
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
         btn.disabled = true;
         status.style.display = 'none';
 
         try {
-            let req = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "controlbotellasvacias", rowData: rowData }) });
+            let actionStr = modoEdicion ? "update" : "append";
+            let payload = { sheetName: "controlbotellasvacias", action: actionStr, rowData: rowData };
+            if (modoEdicion) payload.rowNumber = filaEnEdicion;
+
+            let req = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payload) });
             let res = await req.json();
             
             if(res.status === 'Success') {
                 status.className = 'alert success';
                 status.style.display = 'block'; 
-                status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Movimiento guardado correctamente en la Base de Datos.';
-                document.getElementById('crudForm').reset();
+                status.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${modoEdicion ? 'Cambios guardados' : 'Movimiento creado'} correctamente.`;
                 
-                setTimeout(() => fetchData(), 3000);
+                cancelarEdicion();
+                setTimeout(() => fetchData(), 1500);
             } else { throw new Error(res.message); }
         } catch(error) { 
             status.className = 'alert error';
             status.style.display = 'block';
-            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Hubo un error de conexión, pero el cambio se reflejó localmente.';
-            
-            baseData.BotellasVacias.pop();
-            calcularInventario();
-            renderGrillas();
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error al guardar la información.';
         } finally {
-            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Movimiento';
+            btn.innerHTML = modoEdicion ? '<i class="fa-solid fa-save"></i> Guardar Cambios' : '<i class="fa-solid fa-floppy-disk"></i> Guardar Movimiento';
             btn.disabled = false;
         }
     });
