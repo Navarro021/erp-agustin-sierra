@@ -58,6 +58,12 @@
         .btn-del-pago { background: #D93025; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
         .btn-del-pago:hover { background: #B3261E; }
         .sum-checker { margin-top: 10px; font-size: 13px; font-weight: bold; }
+
+        /* Botones de Edición / Eliminación en Grilla */
+        .btn-action { background: transparent; border: none; cursor: pointer; font-size: 15px; margin: 0 5px; transition: 0.2s;}
+        .btn-action:hover { transform: scale(1.2); }
+        .btn-edit { color: #F29900; }
+        .btn-delete { color: #D93025; }
     </style>
 </head>
 <body>
@@ -78,7 +84,7 @@
 
 <div class="wrapper">
     <div class="card">
-        <h2><i class="fa-solid fa-cash-register"></i> Control de Ventas</h2>
+        <h2 id="formTitle"><i class="fa-solid fa-cash-register"></i> Control de Ventas</h2>
         <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Las transacciones se enlazarán automáticamente mediante un <strong>ID Único</strong>.</p>
         
         <form id="crudForm">
@@ -152,7 +158,10 @@
                 </div>
             </div>
 
-            <button type="submit" id="submitBtn" disabled><i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos</button>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" id="submitBtn" disabled><i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos</button>
+                <button type="button" id="cancelBtn" style="display:none; background:#5F6368; color:white; border:none; padding:12px 20px; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:10px;" onclick="cancelarEdicion()"><i class="fa-solid fa-times"></i> Cancelar</button>
+            </div>
         </form>
         <div id="statusMessage" class="alert"></div>
     </div>
@@ -176,10 +185,11 @@
                         <th>Cantidad</th>
                         <th>Valor</th>
                         <th>Canales</th>
+                        <th style="text-align:center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="7" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Consultando base de datos...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Consultando base de datos...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -199,6 +209,10 @@
     
     let mapaCodigos = {};
     let cacheVentasTotales = []; 
+    let cacheMovimientosTotales = []; // Almacenará movimientos para edición/eliminación relacional
+    let modoEdicion = false;
+    let filaEnEdicion = null;
+    let idVentaGlobalActual = null;
 
     const normalizeString = (str) => typeof str === 'string' ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : '';
 
@@ -222,18 +236,18 @@
         return 0;
     }
 
-    function agregarPago() {
+    function agregarPago(canalPreset = '', valorPreset = '') {
         const container = document.getElementById('pagosContainer');
         const row = document.createElement('div');
         row.className = 'pago-row';
         row.innerHTML = `
             <select class="pago-canal" style="flex: 1;" required>
                 <option value="">Seleccione canal...</option>
-                <option value="Efectivo">Efectivo</option>
-                <option value="Daviplata">Daviplata</option>
-                <option value="Bancolombia">Bancolombia</option>
+                <option value="Efectivo" ${canalPreset === 'Efectivo' ? 'selected' : ''}>Efectivo</option>
+                <option value="Daviplata" ${canalPreset === 'Daviplata' ? 'selected' : ''}>Daviplata</option>
+                <option value="Bancolombia" ${canalPreset === 'Bancolombia' ? 'selected' : ''}>Bancolombia</option>
             </select>
-            <input type="number" class="pago-valor" placeholder="Monto ($)" style="flex: 1;" oninput="validarSumas()" required>
+            <input type="number" class="pago-valor" placeholder="Monto ($)" value="${valorPreset}" style="flex: 1;" oninput="validarSumas()" required>
             <button type="button" class="btn-del-pago" onclick="eliminarPago(this)"><i class="fa-solid fa-trash"></i></button>
         `;
         container.appendChild(row);
@@ -338,13 +352,12 @@
 
             let tableData = db.Ventas || [];
             cacheVentasTotales = tableData; 
+            cacheMovimientosTotales = db.Movimientos || []; // Almacenamos para buscar relaciones
             
             let dataFiltrada = tableData.filter(row => getVal(row, 'Fecha') !== '');
             
-            // CORRECCIÓN ORDENAMIENTO: Guardamos el índice original
             dataFiltrada.forEach((row, index) => { row._filaOriginal = index; });
 
-            // Ordenamos estrictamente por Fecha, y si es la misma, por la fila original
             dataFiltrada.sort((a, b) => {
                 let diffFecha = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
                 if (diffFecha === 0) return b._filaOriginal - a._filaOriginal;
@@ -353,15 +366,23 @@
             
             let newHtml = '';
             if(dataFiltrada.length === 0) {
-                newHtml = '<tr><td colspan="7" style="text-align:center;">No hay registros actualmente.</td></tr>';
+                newHtml = '<tr><td colspan="8" style="text-align:center;">No hay registros actualmente.</td></tr>';
             } else {
                 dataFiltrada.forEach(row => {
-                    const idVenta = getVal(row, 'ID VENTAS') || getVal(row, 'ID_VENTAS') || '-';
+                    let rowEncoded = encodeURIComponent(JSON.stringify(row));
+                    const idVenta = getVal(row, 'ID VENTAS') || getVal(row, 'ID_VENTAS') || getVal(row, 'IDVENTAS') || '-';
                     newHtml += `<tr>
                         <td style="font-weight:bold; color:#1A73E8;">${idVenta}</td>
-                        <td>${getVal(row, 'Fecha')}</td><td>${getVal(row, 'Codigo')}</td>
-                        <td>${getVal(row, 'Bache')}</td><td>${getVal(row, 'Cantidad')}</td>
-                        <td>${getVal(row, 'Valor')}</td><td>${getVal(row, 'Canal')}</td>
+                        <td>${getVal(row, 'Fecha')}</td>
+                        <td>${getVal(row, 'Codigo')}</td>
+                        <td>${getVal(row, 'Bache')}</td>
+                        <td>${getVal(row, 'Cantidad')}</td>
+                        <td>${getVal(row, 'Valor')}</td>
+                        <td>${getVal(row, 'Canal')}</td>
+                        <td style="text-align:center;">
+                            <button class="btn-action btn-edit" onclick="editarRegistro('${rowEncoded}')" title="Editar registro"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-action btn-delete" onclick="eliminarRegistro(${row._rowNumber}, '${idVenta}')" title="Eliminar registro"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     </tr>`;
                 });
             }
@@ -370,10 +391,114 @@
         } catch (error) {
             if(!isBackground) {
                 loadingCodes.innerHTML = '<span style="color:#D93025;">Error de conexión</span>';
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#D93025;">Error al consultar base de datos.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#D93025;">Error al consultar base de datos.</td></tr>`;
             }
         } finally {
             if(isBackground) { syncIndicator.style.display = 'none'; btnRefresh.disabled = false; }
+        }
+    }
+
+    // ==========================================
+    // LÓGICA DE EDICIÓN Y ELIMINACIÓN (CRUD)
+    // ==========================================
+    function editarRegistro(rowStr) {
+        if(!confirm("¿Está seguro que desea EDITAR este registro de venta? Se actualizará en la base de datos y su movimiento asociado.")) return;
+        
+        const row = JSON.parse(decodeURIComponent(rowStr));
+        modoEdicion = true;
+        filaEnEdicion = row._rowNumber;
+        idVentaGlobalActual = getVal(row, 'ID VENTAS') || getVal(row, 'ID_VENTAS') || getVal(row, 'IDVENTAS');
+
+        // 1. Asignar Fecha (Convertir DD/MM/YYYY a YYYY-MM-DD para input date)
+        let fechaStr = getVal(row, 'Fecha');
+        if(fechaStr) {
+            let parts = fechaStr.split('/');
+            document.getElementById('fecha').value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        }
+
+        // 2. Asignar Código y autocompletar Sabor
+        let codVal = getVal(row, 'Codigo');
+        document.getElementById('codigo').value = codVal;
+        document.getElementById('bache').value = getVal(row, 'Bache');
+
+        // 3. Asignar cantidad, tamaño, valor y descripción
+        document.getElementById('cantidad').value = getVal(row, 'Cantidad');
+        
+        let tamVal = String(getVal(row, 'Tamaño') || getVal(row, 'Tamano')).toLowerCase();
+        document.getElementById('tamano').value = tamVal.includes('750') ? '750ml' : '330ml';
+        
+        document.getElementById('valorTotal').value = getVal(row, 'Valor');
+        document.getElementById('descripcion').value = getVal(row, 'Descripcion') || getVal(row, 'Descripción') || '';
+
+        // 4. Reconstruir medios de pago (Buscando en movimientos relacionados al ID)
+        document.getElementById('pagosContainer').innerHTML = '';
+        let movimientosAsociados = cacheMovimientosTotales.filter(m => (getVal(m, 'ID VENTAS') || getVal(m, 'ID_VENTAS') || getVal(m, 'IDVENTAS')) === idVentaGlobalActual);
+        
+        if (movimientosAsociados.length > 0) {
+            movimientosAsociados.forEach(mov => {
+                agregarPago(getVal(mov, 'Canal'), getVal(mov, 'Valor'));
+            });
+        } else {
+            // Fallback si no encuentra el movimiento exacto, asigna el canal general de la venta
+            agregarPago(getVal(row, 'Canal'), getVal(row, 'Valor'));
+        }
+
+        validarSumas();
+
+        // 5. Cambiar interfaz a Modo Edición
+        document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editando Venta (' + idVentaGlobalActual + ')';
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-save"></i> Guardar Cambios';
+        btn.style.background = '#F29900';
+        document.getElementById('cancelBtn').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicion() {
+        modoEdicion = false;
+        filaEnEdicion = null;
+        idVentaGlobalActual = null;
+        document.getElementById('crudForm').reset();
+        document.getElementById('bache').value = '';
+        document.getElementById('sumaCheck').innerText = 'Total ingresado en pagos: $0';
+        document.getElementById('pagosContainer').innerHTML = `
+            <div class="pago-row">
+                <select class="pago-canal" style="flex: 1;" required>
+                    <option value="">Seleccione canal...</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Daviplata">Daviplata</option>
+                    <option value="Bancolombia">Bancolombia</option>
+                </select>
+                <input type="number" class="pago-valor" placeholder="Monto ($)" style="flex: 1;" oninput="validarSumas()" required>
+                <button type="button" class="btn-del-pago" onclick="eliminarPago(this)"><i class="fa-solid fa-trash"></i></button>
+            </div>`;
+        document.getElementById('formTitle').innerHTML = '<i class="fa-solid fa-cash-register"></i> Control de Ventas';
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos';
+        btn.style.background = '#1E8E3E';
+        document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    async function eliminarRegistro(rowNumber, idVenta) {
+        if(!confirm(`⚠️ ¿Está seguro que desea ELIMINAR la venta ${idVenta}? Esta acción borrará el registro y sus movimientos contables asociados.`)) return;
+
+        try {
+            // 1. Eliminar de la hoja Ventas
+            let reqVenta = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "ventas", action: "delete", rowNumber: rowNumber }) });
+            let resVenta = await reqVenta.json();
+            if(resVenta.status !== 'Success') throw new Error("No se pudo eliminar el registro en la base de datos de Ventas.");
+
+            // 2. Eliminar movimientos asociados en movimiento_cuentas (Buscando por ID)
+            let movimientosAsociados = cacheMovimientosTotales.filter(m => (getVal(m, 'ID VENTAS') || getVal(m, 'ID_VENTAS') || getVal(m, 'IDVENTAS')) === idVenta);
+            for (let mov of movimientosAsociados) {
+                await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", action: "delete", rowNumber: mov._rowNumber }) });
+            }
+
+            alert("Venta y movimientos contables eliminados exitosamente.");
+            loadDataAndCodes(true);
+        } catch(e) {
+            alert("Error al eliminar: " + e.message);
+            loadDataAndCodes(true);
         }
     }
 
@@ -410,69 +535,69 @@
         const rawDate = document.getElementById('fecha').value;
         let formattedDate = `${rawDate.split('-')[2]}/${rawDate.split('-')[1]}/${rawDate.split('-')[0]}`;
         
-        const newIdVenta = generarIdVenta(rawDate);
+        const finalIdVenta = modoEdicion ? idVentaGlobalActual : generarIdVenta(rawDate);
         const canalesString = [...new Set(canalesNombres)].join(' + '); 
         const descripcion = document.getElementById('descripcion').value;
 
-        // Fila para tabla VENTAS (El ID es lo último)
+        // Fila para tabla VENTAS
         const rowDataVenta = [
             formattedDate, document.getElementById('codigo').value, document.getElementById('bache').value,
             document.getElementById('cantidad').value, document.getElementById('tamano').value,
-            valorTotal, canalesString, descripcion, newIdVenta
+            valorTotal, canalesString, descripcion, finalIdVenta
         ];
 
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('statusMessage');
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando Transacciones...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando Transacciones...';
         btn.disabled = true;
         status.style.display = 'none';
 
         try {
-            let reqVenta = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "ventas", rowData: rowDataVenta }) });
-            let resVenta = await reqVenta.json();
-            if(resVenta.status !== 'Success') throw new Error('Falló el guardado en Ventas.');
+            let actionStr = modoEdicion ? "update" : "append";
+            
+            // 1. Guardar o actualizar en Ventas
+            let payloadVenta = { sheetName: "ventas", action: actionStr, rowData: rowDataVenta };
+            if (modoEdicion) payloadVenta.rowNumber = filaEnEdicion;
 
+            let reqVenta = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify(payloadVenta) });
+            let resVenta = await reqVenta.json();
+            if(resVenta.status !== 'Success') throw new Error('Falló el almacenamiento en Ventas.');
+
+            if (modoEdicion) {
+                // Si estamos editando, primero limpiamos los movimientos antiguos de este ID en movimiento_cuentas para recrearlos limpios
+                let movimientosAntiguos = cacheMovimientosTotales.filter(m => (getVal(m, 'ID VENTAS') || getVal(m, 'ID_VENTAS') || getVal(m, 'IDVENTAS')) === finalIdVenta);
+                for (let movAntiguo of movimientosAntiguos) {
+                    await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", action: "delete", rowNumber: movAntiguo._rowNumber }) });
+                }
+            }
+
+            // 2. Registrar los pagos divididos en movimiento_cuentas
             for(let pago of detallePagos) {
-                let descMovimiento = `Venta ${newIdVenta}`;
+                let descMovimiento = `Venta ${finalIdVenta}`;
                 if(descripcion) descMovimiento += ` - ${descripcion}`;
                 
-                // Fila para MOVIMIENTO_CUENTAS
                 let rowDataMov = [
-                    formattedDate, 'Entrada', pago.canal, pago.valor, descMovimiento, newIdVenta
+                    formattedDate, 'Entrada', pago.canal, pago.valor, descMovimiento, finalIdVenta
                 ];
 
-                let reqMov = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", rowData: rowDataMov }) });
+                let reqMov = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", action: "append", rowData: rowDataMov }) });
                 let resMov = await reqMov.json();
                 if(resMov.status !== 'Success') throw new Error(`Falló el registro del pago en ${pago.canal}.`);
             }
 
             status.className = 'alert success';
             status.style.display = 'block'; 
-            status.innerHTML = `<div class="info-title"><i class="fa-solid fa-circle-check"></i> Éxito Relacional</div> Venta guardada y pagos divididos correctamente bajo el ID: <strong>${newIdVenta}</strong>`;
+            status.innerHTML = `<div class="info-title"><i class="fa-solid fa-circle-check"></i> Éxito Relacional</div> ${modoEdicion ? 'Cambios guardados' : 'Venta registrada'} correctamente bajo el ID: <strong>${finalIdVenta}</strong>`;
             
-            document.getElementById('crudForm').reset();
-            document.getElementById('bache').value = '';
-            document.getElementById('sumaCheck').innerText = 'Total ingresado en pagos: $0';
-            document.getElementById('pagosContainer').innerHTML = `
-                <div class="pago-row">
-                    <select class="pago-canal" style="flex: 1;" required>
-                        <option value="">Seleccione canal...</option>
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Daviplata">Daviplata</option>
-                        <option value="Bancolombia">Bancolombia</option>
-                    </select>
-                    <input type="number" class="pago-valor" placeholder="Monto ($)" style="flex: 1;" oninput="validarSumas()" required>
-                    <button type="button" class="btn-del-pago" onclick="eliminarPago(this)"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
-            
-            setTimeout(() => { loadDataAndCodes(true); }, 2500);
+            cancelarEdicion();
+            setTimeout(() => { loadDataAndCodes(true); }, 2000);
 
         } catch (error) {
             status.className = 'alert error';
             status.style.display = 'block';
             status.innerHTML = '<div class="info-title"><i class="fa-solid fa-triangle-exclamation"></i> Error Crítico</div>❌ ' + error.message;
         } finally {
-            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos';
+            btn.innerHTML = modoEdicion ? '<i class="fa-solid fa-save"></i> Guardar Cambios' : '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos';
             btn.disabled = false;
         }
     });
