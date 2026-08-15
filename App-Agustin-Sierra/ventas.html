@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Ventas - Agustín de la Sierra</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #F8F9FA; margin: 0; padding: 0; color: #333; }
+        .wrapper { max-width: 1100px; margin: auto; padding: 20px;}
+        
+        /* Barra de Navegación Global */
+        .global-nav { background: #1A73E8; padding: 12px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; position: sticky; top: 0; z-index: 1000; }
+        .nav-container { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .nav-logo { color: white; text-decoration: none; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .nav-logo:hover { opacity: 0.8; }
+        .nav-items { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-items a { color: rgba(255,255,255,0.9); text-decoration: none; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; transition: 0.3s; }
+        .nav-items a:hover { background: rgba(255,255,255,0.2); color: white; }
+        .nav-items a.btn-logout { background: #D93025; color: white; }
+        .nav-items a.btn-logout:hover { background: #B3261E; }
+
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        h2 { color: #1A73E8; margin-top: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #E8EAED; padding-bottom: 10px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E8EAED; padding-bottom: 10px; margin-bottom: 15px; }
+        .card-header h2 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+        .btn-refresh { background: transparent; color: #1A73E8; border: 1px solid #1A73E8; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-refresh:hover { background: #E8F0FE; color: #174EA6; }
+        .sync-indicator { font-size: 13px; color: #1A73E8; margin-right: 15px; display: none; font-weight: 500;}
+
+        .form-group { margin-bottom: 15px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { display: block; font-weight: 500; margin-bottom: 5px; color: #5F6368; font-size: 14px;}
+        input, select { width: 100%; padding: 10px; border: 1px solid #CCC; border-radius: 4px; box-sizing: border-box; font-size: 14px; outline: none; background: white; }
+        input:focus, select:focus { border-color: #1A73E8; }
+        input[readonly] { background-color: #E8EAED; color: #5F6368; cursor: not-allowed; }
+        button[type="submit"] { background: #1E8E3E; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; width: 100%; transition: 0.3s; }
+        button[type="submit"]:hover { background: #146c2e; }
+        button[type="submit"]:disabled { background: #9AA0A6; cursor: not-allowed; }
+        
+        .alert { padding: 15px; margin-top: 20px; border-radius: 4px; display: none; font-weight: 500; font-size: 14px; line-height: 1.5; }
+        .alert.success { background: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+        .alert.error { background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
+        .loading-indicator { font-size: 12px; color: #1A73E8; margin-top: 5px; display: none; }
+        .info-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        
+        .table-responsive { overflow-x: auto; max-height: 400px; border: 1px solid #E8EAED; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #E8EAED; white-space: nowrap; }
+        th { background-color: #F8F9FA; color: #5F6368; font-weight: 600; position: sticky; top: 0; z-index: 1;}
+        tr:hover { background-color: #F1F3F4; }
+
+        /* Estilos Pagos Múltiples */
+        .pagos-box { background: #F8F9FA; border: 1px solid #E8EAED; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+        .pago-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .btn-add-pago { background: #5F6368; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: 0.3s; }
+        .btn-add-pago:hover { background: #3C4043; }
+        .btn-del-pago { background: #D93025; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .btn-del-pago:hover { background: #B3261E; }
+        .sum-checker { margin-top: 10px; font-size: 13px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav class="global-nav">
+    <div class="nav-container">
+        <a href="index.html" class="nav-logo"><i class="fa-solid fa-house"></i> Menú Principal</a>
+        <div class="nav-items">
+            <a href="botellas.html"><i class="fa-solid fa-wine-bottle"></i> Botellas</a>
+            <a href="produccion.html"><i class="fa-solid fa-industry"></i> Producción</a>
+            <a href="ventas.html"><i class="fa-solid fa-cash-register"></i> Ventas</a>
+            <a href="movimientos.html"><i class="fa-solid fa-wallet"></i> Movimientos</a>
+            <a href="reportes.html"><i class="fa-solid fa-chart-pie"></i> Reportes</a>
+            <a href="#" onclick="cerrarSesionGlobal()" class="btn-logout"><i class="fa-solid fa-power-off"></i> Salir</a>
+        </div>
+    </div>
+</nav>
+
+<div class="wrapper">
+    <div class="card">
+        <h2><i class="fa-solid fa-cash-register"></i> Control de Ventas</h2>
+        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Las transacciones se enlazarán automáticamente mediante un <strong>ID Único</strong>.</p>
+        
+        <form id="crudForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Fecha de Venta</label>
+                    <input type="date" id="fecha" required>
+                </div>
+                <div class="form-group">
+                    <label>Código / Producto</label>
+                    <select id="codigo" required disabled>
+                        <option value="">Cargando códigos...</option>
+                    </select>
+                    <div id="loadingCodes" class="loading-indicator"><i class="fa-solid fa-spinner fa-spin"></i> Conectando...</div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Bache (Sabor)</label>
+                    <input type="text" id="bache" placeholder="Se autocompleta al elegir el producto" readonly required>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad (Botellas)</label>
+                    <input type="number" id="cantidad" placeholder="Ej. 10" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tamaño</label>
+                    <select id="tamano" required>
+                        <option value="">Seleccione...</option>
+                        <option value="750ml">750 ml</option>
+                        <option value="330ml">330 ml</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Valor Total de la Venta ($)</label>
+                    <input type="number" id="valorTotal" placeholder="Ej. 50000" oninput="validarSumas()" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Descripción / Observación</label>
+                <input type="text" id="descripcion" placeholder="Detalle opcional">
+            </div>
+
+            <!-- SECCIÓN MÉTODOS DE PAGO MÚLTIPLES -->
+            <div class="pagos-box">
+                <label><i class="fa-solid fa-money-bill-transfer"></i> Medios de Pago</label>
+                <div id="pagosContainer">
+                    <div class="pago-row">
+                        <select class="pago-canal" style="flex: 1;" required>
+                            <option value="">Seleccione canal...</option>
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Daviplata">Daviplata</option>
+                            <option value="Bancolombia">Bancolombia</option>
+                        </select>
+                        <input type="number" class="pago-valor" placeholder="Monto ($)" style="flex: 1;" oninput="validarSumas()" required>
+                        <button type="button" class="btn-del-pago" onclick="eliminarPago(this)"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn-add-pago" onclick="agregarPago()">
+                    <i class="fa-solid fa-plus"></i> Agregar otro canal de pago
+                </button>
+                
+                <div id="sumaCheck" class="sum-checker" style="color: #666;">
+                    Total ingresado en pagos: $0
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" disabled><i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos</button>
+        </form>
+        <div id="statusMessage" class="alert"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fa-solid fa-table-list"></i> Datos en Ventas</h2>
+            <div>
+                <span id="syncIndicator" class="sync-indicator"><i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...</span>
+                <button type="button" id="refreshGridBtn" class="btn-refresh"><i class="fa-solid fa-arrows-rotate"></i> Refrescar</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th style="color:#1A73E8;">ID Venta</th>
+                        <th>Fecha</th>
+                        <th>Código</th>
+                        <th>Bache</th>
+                        <th>Cantidad</th>
+                        <th>Valor</th>
+                        <th>Canales</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="7" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Consultando base de datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cerrarSesionGlobal() {
+        sessionStorage.removeItem("accesoAgustin");
+        window.location.href = "index.html";
+    }
+
+    const CONFIG = {
+        scriptUrl: 'https://script.google.com/macros/s/AKfycby-IrI3W6HDggRLF_4c9pqE8Qf3t5EclQZXH8pOi3a6y8kELMrmumSzCOkrcKUFjpxu8Q/exec',
+        sheetName: 'Ventas'
+    };
+    
+    let mapaCodigos = {};
+    let cacheVentasTotales = []; 
+
+    const normalizeString = (str) => typeof str === 'string' ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() : '';
+
+    const getVal = (row, key) => {
+        const normKey = normalizeString(key);
+        const foundKey = Object.keys(row).find(k => normalizeString(k) === normKey);
+        return foundKey ? row[foundKey] : '';
+    };
+
+    function parseCustomDate(dateStr) {
+        if (!dateStr) return 0;
+        let str = String(dateStr).trim();
+        if (str.match(/^\d{1,2}\/\d{1,2}\/\d{2,4}$/)) {
+            let parts = str.split('/');
+            let y = parseInt(parts[2], 10);
+            if (y < 100) y += 2000;
+            return new Date(y, parseInt(parts[1], 10)-1, parseInt(parts[0], 10)).getTime();
+        }
+        let d = new Date(str);
+        if (!isNaN(d.getTime())) return d.getTime();
+        return 0;
+    }
+
+    function agregarPago() {
+        const container = document.getElementById('pagosContainer');
+        const row = document.createElement('div');
+        row.className = 'pago-row';
+        row.innerHTML = `
+            <select class="pago-canal" style="flex: 1;" required>
+                <option value="">Seleccione canal...</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Daviplata">Daviplata</option>
+                <option value="Bancolombia">Bancolombia</option>
+            </select>
+            <input type="number" class="pago-valor" placeholder="Monto ($)" style="flex: 1;" oninput="validarSumas()" required>
+            <button type="button" class="btn-del-pago" onclick="eliminarPago(this)"><i class="fa-solid fa-trash"></i></button>
+        `;
+        container.appendChild(row);
+        validarSumas();
+    }
+
+    function eliminarPago(btn) {
+        const row = btn.parentElement;
+        if(document.querySelectorAll('.pago-row').length > 1) {
+            row.remove();
+            validarSumas();
+        } else {
+            alert("Debe haber al menos un método de pago.");
+        }
+    }
+
+    function validarSumas() {
+        const valorTotal = parseFloat(document.getElementById('valorTotal').value) || 0;
+        const inputsPago = document.querySelectorAll('.pago-valor');
+        let sumaPagos = 0;
+        inputsPago.forEach(input => {
+            sumaPagos += parseFloat(input.value) || 0;
+        });
+
+        const checkDiv = document.getElementById('sumaCheck');
+        checkDiv.innerText = `Total ingresado en pagos: $${sumaPagos}`;
+
+        if (sumaPagos > 0 && sumaPagos !== valorTotal) {
+            checkDiv.style.color = '#D93025'; 
+            checkDiv.innerText += ` (Falta/Sobra diferencia vs Valor Total)`;
+        } else if (sumaPagos > 0 && sumaPagos === valorTotal) {
+            checkDiv.style.color = '#1E8E3E'; 
+        } else {
+            checkDiv.style.color = '#666';
+        }
+    }
+
+    function generarIdVenta(fechaStr) {
+        if(!fechaStr) return "VT00000";
+        const parts = fechaStr.split('-');
+        const mes = parts[1];
+        const ano = parts[0].slice(-2); 
+        const prefijo = `VT${mes}${ano}`;
+
+        let maxNum = 0;
+        cacheVentasTotales.forEach(row => {
+            const idObj = getVal(row, 'ID VENTAS') || getVal(row, 'ID_VENTAS') || getVal(row, 'IDVENTAS');
+            if(idObj && typeof idObj === 'string' && idObj.startsWith(prefijo)) {
+                const numStr = idObj.replace(prefijo, '');
+                const num = parseInt(numStr, 10);
+                if(!isNaN(num) && num > maxNum) {
+                    maxNum = num;
+                }
+            }
+        });
+
+        return prefijo + (maxNum + 1);
+    }
+
+    async function loadDataAndCodes(isBackground = false) {
+        const selectCodigo = document.getElementById('codigo');
+        const loadingCodes = document.getElementById('loadingCodes');
+        const submitBtn = document.getElementById('submitBtn');
+        const tbody = document.getElementById('tableBody');
+        const syncIndicator = document.getElementById('syncIndicator');
+        const btnRefresh = document.getElementById('refreshGridBtn');
+        
+        if (isBackground) {
+            syncIndicator.style.display = 'inline-block';
+            btnRefresh.disabled = true;
+        } else {
+            loadingCodes.style.display = 'block';
+        }
+        
+        try {
+            const urlConCacheBuster = CONFIG.scriptUrl + '?t=' + new Date().getTime();
+            const response = await fetch(urlConCacheBuster);
+            const db = await response.json();
+            
+            let dashboardData = db.Dashboard || [];
+            if (dashboardData && dashboardData.length > 0) {
+                mapaCodigos = {};
+                const currentSelection = selectCodigo.value;
+                let newOptionsHtml = '<option value="">Seleccione un Código...</option>';
+                
+                dashboardData.forEach(row => {
+                    const cod = getVal(row, 'Codigo');
+                    const bache = getVal(row, 'Bache');
+                    const estado = getVal(row, 'Estado'); 
+                    
+                    if(cod && String(cod).trim() !== "" && !mapaCodigos[cod] && String(estado).trim() === "1") {
+                        mapaCodigos[cod] = bache;
+                        newOptionsHtml += `<option value="${cod}">${cod} - ${bache}</option>`;
+                    }
+                });
+                selectCodigo.innerHTML = newOptionsHtml;
+                if(currentSelection && mapaCodigos[currentSelection]) selectCodigo.value = currentSelection;
+                selectCodigo.disabled = false;
+                submitBtn.disabled = false;
+            }
+            if(!isBackground) loadingCodes.style.display = 'none';
+
+            let tableData = db.Ventas || [];
+            cacheVentasTotales = tableData; 
+            
+            let dataFiltrada = tableData.filter(row => getVal(row, 'Fecha') !== '');
+            
+            // CORRECCIÓN ORDENAMIENTO: Guardamos el índice original
+            dataFiltrada.forEach((row, index) => { row._filaOriginal = index; });
+
+            // Ordenamos estrictamente por Fecha, y si es la misma, por la fila original
+            dataFiltrada.sort((a, b) => {
+                let diffFecha = parseCustomDate(getVal(b, 'Fecha')) - parseCustomDate(getVal(a, 'Fecha'));
+                if (diffFecha === 0) return b._filaOriginal - a._filaOriginal;
+                return diffFecha;
+            });
+            
+            let newHtml = '';
+            if(dataFiltrada.length === 0) {
+                newHtml = '<tr><td colspan="7" style="text-align:center;">No hay registros actualmente.</td></tr>';
+            } else {
+                dataFiltrada.forEach(row => {
+                    const idVenta = getVal(row, 'ID VENTAS') || getVal(row, 'ID_VENTAS') || '-';
+                    newHtml += `<tr>
+                        <td style="font-weight:bold; color:#1A73E8;">${idVenta}</td>
+                        <td>${getVal(row, 'Fecha')}</td><td>${getVal(row, 'Codigo')}</td>
+                        <td>${getVal(row, 'Bache')}</td><td>${getVal(row, 'Cantidad')}</td>
+                        <td>${getVal(row, 'Valor')}</td><td>${getVal(row, 'Canal')}</td>
+                    </tr>`;
+                });
+            }
+            tbody.innerHTML = newHtml;
+
+        } catch (error) {
+            if(!isBackground) {
+                loadingCodes.innerHTML = '<span style="color:#D93025;">Error de conexión</span>';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#D93025;">Error al consultar base de datos.</td></tr>`;
+            }
+        } finally {
+            if(isBackground) { syncIndicator.style.display = 'none'; btnRefresh.disabled = false; }
+        }
+    }
+
+    document.getElementById('codigo').addEventListener('change', function(e) {
+        const cod = e.target.value;
+        document.getElementById('bache').value = (cod && mapaCodigos[cod]) ? mapaCodigos[cod] : '';
+    });
+
+    window.onload = () => loadDataAndCodes(false);
+    document.getElementById('refreshGridBtn').addEventListener('click', () => loadDataAndCodes(true));
+
+    document.getElementById('crudForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const valorTotal = parseFloat(document.getElementById('valorTotal').value) || 0;
+        const pagosRows = document.querySelectorAll('.pago-row');
+        let sumaPagos = 0;
+        let detallePagos = [];
+        let canalesNombres = [];
+
+        pagosRows.forEach(row => {
+            const canal = row.querySelector('.pago-canal').value;
+            const valor = parseFloat(row.querySelector('.pago-valor').value) || 0;
+            sumaPagos += valor;
+            canalesNombres.push(canal);
+            detallePagos.push({ canal, valor });
+        });
+
+        if (sumaPagos !== valorTotal) {
+            alert(`ATENCIÓN: La suma de los pagos ingresados ($${sumaPagos}) NO coincide con el Valor Total de la Venta ($${valorTotal}). Corrige los montos antes de guardar.`);
+            return;
+        }
+
+        const rawDate = document.getElementById('fecha').value;
+        let formattedDate = `${rawDate.split('-')[2]}/${rawDate.split('-')[1]}/${rawDate.split('-')[0]}`;
+        
+        const newIdVenta = generarIdVenta(rawDate);
+        const canalesString = [...new Set(canalesNombres)].join(' + '); 
+        const descripcion = document.getElementById('descripcion').value;
+
+        // Fila para tabla VENTAS (El ID es lo último)
+        const rowDataVenta = [
+            formattedDate, document.getElementById('codigo').value, document.getElementById('bache').value,
+            document.getElementById('cantidad').value, document.getElementById('tamano').value,
+            valorTotal, canalesString, descripcion, newIdVenta
+        ];
+
+        const btn = document.getElementById('submitBtn');
+        const status = document.getElementById('statusMessage');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando Transacciones...';
+        btn.disabled = true;
+        status.style.display = 'none';
+
+        try {
+            let reqVenta = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "ventas", rowData: rowDataVenta }) });
+            let resVenta = await reqVenta.json();
+            if(resVenta.status !== 'Success') throw new Error('Falló el guardado en Ventas.');
+
+            for(let pago of detallePagos) {
+                let descMovimiento = `Venta ${newIdVenta}`;
+                if(descripcion) descMovimiento += ` - ${descripcion}`;
+                
+                // Fila para MOVIMIENTO_CUENTAS
+                let rowDataMov = [
+                    formattedDate, 'Entrada', pago.canal, pago.valor, descMovimiento, newIdVenta
+                ];
+
+                let reqMov = await fetch(CONFIG.scriptUrl, { method: 'POST', body: JSON.stringify({ sheetName: "movimiento_cuentas", rowData: rowDataMov }) });
+                let resMov = await reqMov.json();
+                if(resMov.status !== 'Success') throw new Error(`Falló el registro del pago en ${pago.canal}.`);
+            }
+
+            status.className = 'alert success';
+            status.style.display = 'block'; 
+            status.innerHTML = `<div class="info-title"><i class="fa-solid fa-circle-check"></i> Éxito Relacional</div> Venta guardada y pagos divididos correctamente bajo el ID: <strong>${newIdVenta}</strong>`;
+            
+            document.getElementById('crudForm').reset();
+            document.getElementById('bache').value = '';
+            document.getElementById('sumaCheck').innerText = 'Total ingresado en pagos: $0';
+            document.getElementById('pagosContainer').innerHTML = `
+                <div class="pago-row">
+                    <select class="pago-canal" style="flex: 1;" required>
+                        <option value="">Seleccione canal...</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Daviplata">Daviplata</option>
+                        <option value="Bancolombia">Bancolombia</option>
+                    </select>
+                    <input type="number" class="pago-valor" placeholder="Monto ($)" style="flex: 1;" oninput="validarSumas()" required>
+                    <button type="button" class="btn-del-pago" onclick="eliminarPago(this)"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+            
+            setTimeout(() => { loadDataAndCodes(true); }, 2500);
+
+        } catch (error) {
+            status.className = 'alert error';
+            status.style.display = 'block';
+            status.innerHTML = '<div class="info-title"><i class="fa-solid fa-triangle-exclamation"></i> Error Crítico</div>❌ ' + error.message;
+        } finally {
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Registrar Venta y Pagos';
+            btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>
